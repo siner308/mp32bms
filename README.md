@@ -1,9 +1,8 @@
-# bms2mp3-for-trainingset
+# mp32bms
 
-Original source link: https://github.com/bemusic/bms2mp3
+bms2mp3: https://github.com/bemusic/bms2mp3
 
-Converts BMS files to MP3 files for trainingset.
-MP3 file has same name as BMS file.
+Machine Learning project for bms file generation.
 
 ## Prerequisites
 
