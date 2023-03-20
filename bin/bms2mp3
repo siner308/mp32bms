@@ -46,7 +46,7 @@ def get_mp3_name(attrs)
   "#{attrs['title']} (by #{attrs['artist']})".gsub(/[\/\\:\*\?"<>\|]/, '')
 end
 
-mp3dir = ENV['MP3DIR'] || 'mp3'
+mp3dir = ENV['MP3DIR'] || 'mp3_files'
 tempdir = ENV['TEMP'] || nil
 
 FileUtils.mkdir_p(mp3dir)
@@ -63,7 +63,7 @@ Dir.mktmpdir 'bms2song', tempdir do |dir|
     trimmed = "#{tmpfile}_bms2song.trimmed.wav"
     song_info = get_song_info(file)
     mp3_name = get_mp3_name(song_info)
-    mp3 = "#{mp3dir}/#{mp3_name}.mp3"
+    mp3 = ARGV[1]
     $stderr.puts ">> Output file: #{mp3}"
     if File.exist?(mp3)
       $stderr.puts "!! #{mp3} already exists -- skipping"

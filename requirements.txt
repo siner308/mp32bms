@@ -1,0 +1,5 @@
+pydub==0.25.1
+ffprobe==0.5
+librosa==0.10.0.post2
+numpy==1.23.5
+midiutil==1.2.1

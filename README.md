@@ -17,10 +17,14 @@ MP3 file has same name as BMS file.
 - `bms-renderer` (v2.0.0-beta)
 - `bmsampler` (v0.2.0)
 
+## Downlaod bms files
+
+From [google drive](https://drive.google.com/drive/folders/1pJGq49KrF5St2Yfgp493oOKoDEIyZ6Hq)
+
 
 ## Usage
 
 ```
 nvm use
-python bulk_handler.py
+python bms2mp3.py
 ```
