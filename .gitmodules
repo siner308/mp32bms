@@ -1,0 +1,3 @@
+[submodule "bms-renderer"]
+	path = bms-renderer
+	url = https://github.com/bemusic/bms-renderer
