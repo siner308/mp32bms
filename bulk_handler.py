@@ -2,12 +2,6 @@ from os import system, path, listdir
 from multiprocessing import Pool
 
 
-# def run(dirname):
-#     base_dir = './bms_files'
-#     files = listdir(f"{base_dir}/{dirname}")
-#     for file in files:
-# command(f"{base_dir}/{dirname}/{file}", f"./mp3_files/{dirname}")
-
 def file_list(dirname):
     base_dir = './bms_files'
     dirpath = f"{base_dir}/{dirname}"
@@ -22,16 +16,6 @@ def command(filename: str):
     source = f"./bms_files/{dirname}/{filename}"
     output = f"./mp3/{dirname}/{filename[:-4:]}.mp3"
     system(f"./bms2mp3 \"{source}\" \"{output}\"")
-
-
-# def rename(dirname):
-#     base_dir = './mp3'
-#     files: list[str] = listdir(f"{base_dir}")
-#     for file in files:
-#         if file.startswith('['):
-#             artist, music_name = file[file.index(']') + 2::][:-4:].split(' — ')
-#             new_path = f"{base_dir}/{dirname}/{music_name} (by {artist})"
-#             system(f"mv \"{base_dir}/{file}\" \"{new_path}\"")
 
 
 if __name__ == "__main__":
