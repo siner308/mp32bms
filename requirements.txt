@@ -1,5 +1,7 @@
 pydub==0.25.1
 ffprobe==0.5
-librosa==0.10.0.post2
+librosa==0.8.0
 numpy==1.23.5
 midiutil==1.2.1
+matplotlib==3.7.1
+jupyter==1.0.0
