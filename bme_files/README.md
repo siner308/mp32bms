@@ -1,3 +1,3 @@
 # bme files
 
-extracted from bms files
+extracted notecharts from bms files

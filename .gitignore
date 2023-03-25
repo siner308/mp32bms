@@ -3,9 +3,11 @@ venv
 
 bme_files/*
 !bme_files/README.md
+!bme_files/mom (by w_tre).json
 
 mp3_files/*
 !mp3_files/README.md
+!mp3_files/mom (by w_tre).mp3
 
 bms_files/*
 !bms_files/README.md
