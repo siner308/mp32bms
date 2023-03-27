@@ -1,3 +1,6 @@
+import math
+
+import numpy as np
 import librosa
 from librosa.feature.rhythm import tempo as get_tempo
 import json
@@ -7,16 +10,49 @@ import pandas
 from file_utils import get_mp3_file_list, get_bme_file_list, get_file_list
 
 
-def get_input(mp3_file):
+def get_input(mp3_file, duration_from_bme):
+    """
+
+    :param mp3_file:
+    :return: onset_per_beats, duration, tempo
+    """
     y, sr = librosa.load(mp3_file)
     y = librosa.util.normalize(y)
-    onset = librosa.onset.onset_detect(y=y, sr=sr)
-    duration = librosa.get_duration(y=y, sr=sr)
-    tempo = get_tempo(y=y, sr=sr)
-    return onset, duration, tempo
+    duration = librosa.get_duration(y=y, sr=sr, center=True)
+    onset_env = librosa.onset.onset_strength(y=y, sr=sr, center=True, aggregate=np.median)
+    times = librosa.times_like(np.abs(librosa.stft(y)))
+
+    onsets = []
+    onset_per_seconds = []
+    start = 0
+    times_index = 0
+    onset_index = 0
+    while True:
+        if times_index >= len(times):
+            break
+
+        unit_time = int(100 * times[times_index])
+        if unit_time > 100 * duration_from_bme:
+            break
+
+        if unit_time == start:
+            onset_per_seconds.append(int(10 * onset_env[onset_index]))
+            onset_index += 1
+            times_index += 1
+        else:
+            onset_per_seconds.append(0)
+
+        start = start + 1
+        if start % 100 == 0:
+            onsets.append(onset_per_seconds)
+            onset_per_seconds = []
+
+    onsets.append(onset_per_seconds + [0] * (100 - len(onset_per_seconds)))
+
+    return onsets, duration
 
 
-def get_output(bme_file) -> (bool, list[float], list[int], float, float):
+def get_output(bme_file) -> (list[list[str]], float, int, int):
     """
     bpm이 변하는 곡이라면, 학습에 포함시키지 말자.
     :param bme_file:
@@ -25,16 +61,28 @@ def get_output(bme_file) -> (bool, list[float], list[int], float, float):
     # load json
     jsonfile = open(bme_file, mode='r')
     jsondata = json.load(jsonfile)
-    has_multi_bpm = len(jsondata["_timing"]["_speedcore"]["_segments"]) > 1
-    if has_multi_bpm:
-        return True, None, None, None, None
-
     notecharts = jsondata['_notes']
-    beats = [int(100 * notechart['beat']) for notechart in notecharts]
-    columns = [notechart['column'] for notechart in notecharts]
     duration = jsondata['_duration']
-    bpm = jsondata["_timing"]["_speedcore"]["_segments"][0]["bpm"]
-    return False, beats, columns, duration, bpm
+    difficulty = jsondata["_songInfo"]["difficulty"]
+    level = jsondata["_songInfo"]["level"]
+
+    # times_per_second_list = [[0] * 100] * int(duration + 1)
+    columns_per_seconds_list = [["0" for _ in range(100)] for _ in range(int(duration) + 1)]
+
+    for notechart in notecharts:
+        time = notechart['time']
+        column = notechart['column'] if notechart['column'] != 'SC' else 'S'
+        second = int(time)
+        float_index = int(100 * (time - second))
+        # times_per_second_list[second][float_index] = time
+        target_column = columns_per_seconds_list[second][float_index]
+        if target_column == "0":
+            columns_per_seconds_list[second][float_index] = column
+        else:
+            columns_per_seconds_list[second][float_index] = "".join(sorted(
+                columns_per_seconds_list[second][float_index] + column))
+
+    return columns_per_seconds_list, duration, difficulty, level
 
 
 def extract_trainingset():
@@ -52,28 +100,32 @@ def extract_trainingset():
             continue
 
         # get output
-        has_multi_bpm, beats, columns, duration_from_bme, bpm_from_bme = get_output(f"./bme_files/M/{target_bme_file}")
-
-        # if bpm is changed, skip
-        if has_multi_bpm:
-            print("❌ (has multi bpm) " + target_bme_file)
-            continue
+        columns_per_seconds_list, duration_from_bme, difficulty, level = get_output(
+            f"./bme_files/M/{target_bme_file}")
 
         # get input
-        onset, duration_from_mp3, bpm_from_mp3 = get_input(f"./mp3_files/M/{mp3_file}")
+        onsets, duration_from_mp3 = get_input(f"./mp3_files/M/{mp3_file}", duration_from_bme)
 
-        new_df = pandas.DataFrame({
-            'input_onset': [onset],
-            'input_duration': duration_from_mp3,
-            'input_bpm': bpm_from_mp3,
-            'output_beats': [beats],
-            'output_columns': [columns],
-            'output_duration': duration_from_bme,
-            'output_bpm': bpm_from_bme,
-        })
-        # append to dataframe
-        dataframe = pandas.concat([dataframe, new_df]) if not dataframe.empty else new_df
-        print(f"✅ [bpm: {bpm_from_mp3} or {bpm_from_bme}] [duration: {duration_from_mp3} or {duration_from_bme}] [notes: {len(columns)}] [onset: {len(onset)}] {target_bme_file}")
+        for i in range(len(onsets)):
+            onset = onsets[i]
+            columns = columns_per_seconds_list[i]
+            input_duration = int(100 * duration_from_mp3)
+            input_difficulty = difficulty
+            input_level = level
+            output_duration = int(100 * duration_from_bme)
+            name = mp3_file.replace('.mp3', '')
+            new_df = pandas.DataFrame(
+                [[input_duration, input_difficulty, input_level, output_duration, name]],
+                columns=['input_duration', 'input_difficulty', 'input_level', 'output_duration', 'name'],
+            )
+
+            new_df = pandas.concat([new_df, pandas.DataFrame(onset).transpose().add_prefix("input_onset_")], axis=1)
+            new_df = pandas.concat([new_df, pandas.DataFrame(columns).transpose().add_prefix("output_columns_")],
+                                   axis=1)
+
+            # append to dataframe
+            dataframe = pandas.concat([dataframe, new_df]) if not dataframe.empty else new_df
+        print(f"✅ {name}")
     return dataframe
 
 
