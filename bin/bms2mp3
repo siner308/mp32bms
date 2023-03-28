@@ -37,8 +37,8 @@ def bms_files(package, temp:)
   basenames.map { |x| File.join(outdir, x) }
 end
 
-def get_song_info(file)
-  stdout, _ = Open3.capture2('bms-renderer', '--info', file, '-')
+def get_song_info(file, output)
+  stdout, _ = Open3.capture2('bms-renderer', '--info', file, output)
   JSON.parse(stdout)
 end
 
@@ -61,7 +61,7 @@ Dir.mktmpdir 'bms2song', tempdir do |dir|
     end
     out = "#{tmpfile}_bms2song.wav"
     trimmed = "#{tmpfile}_bms2song.trimmed.wav"
-    song_info = get_song_info(file)
+    song_info = get_song_info(file, ARGV[1])
     mp3_name = get_mp3_name(song_info)
     mp3 = ARGV[1]
     $stderr.puts ">> Output file: #{mp3}"
@@ -70,8 +70,7 @@ Dir.mktmpdir 'bms2song', tempdir do |dir|
       next
     end
     $stderr.puts ">> Rendering to: #{out}"
-
-    system 'bms-renderer', file, out
+    system 'bms-renderer', file, out, ARGV[1]
     system 'wavegain', '-y', out
     system(
       'sox', out,

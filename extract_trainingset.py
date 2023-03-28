@@ -1,13 +1,12 @@
-import math
+from multiprocessing import Pool
 
 import numpy as np
 import librosa
-from librosa.feature.rhythm import tempo as get_tempo
 import json
 
 import pandas
 
-from file_utils import get_mp3_file_list, get_bme_file_list, get_file_list
+from file_utils import get_file_list
 
 
 def get_input(mp3_file, duration_from_bme):
@@ -97,10 +96,10 @@ def get_output(bme_file) -> (list[list[str]], float, int, int):
     return columns_per_seconds_list, duration, difficulty, level
 
 
-def extract_trainingset():
+def extract_trainingset(dirname):
     # get training set
-    mp3_files = get_file_list('./mp3_files/M')
-    bme_files = get_file_list('./bme_files/M')
+    mp3_files = get_file_list('./mp3_files/' + dirname)
+    bme_files = get_file_list('./bme_files/' + dirname)
 
     dataframe = pandas.DataFrame()
     for mp3_file in sorted(mp3_files):
@@ -113,10 +112,10 @@ def extract_trainingset():
 
         # get output
         columns_per_seconds_list, duration_from_bme, difficulty, level = get_output(
-            f"./bme_files/M/{target_bme_file}")
+            f"./bme_files/{dirname}/{target_bme_file}")
 
         # get input
-        onsets, duration_from_mp3 = get_input(f"./mp3_files/M/{mp3_file}", duration_from_bme)
+        onsets, duration_from_mp3 = get_input(f"./mp3_files/{dirname}/{mp3_file}", duration_from_bme)
 
         name = mp3_file.replace('.mp3', '')
         for i in range(len(onsets)):
@@ -138,12 +137,15 @@ def extract_trainingset():
             # append to dataframe
             dataframe = pandas.concat([dataframe, new_df]) if not dataframe.empty else new_df
         print(f"✅ {name}")
-    return dataframe
+
+    dataframe.to_csv(f"training_set_{dirname}.csv", index=False)
 
 
 def trainingset_to_csv():
-    dataframe = extract_trainingset()
-    dataframe.to_csv("training_set.csv", index=False)
+    dirs = ["E", "S"]
+
+    with Pool(2) as p:
+        p.map(extract_trainingset, dirs)
 
 
 if __name__ == "__main__":
