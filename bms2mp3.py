@@ -25,12 +25,12 @@ if __name__ == "__main__":
     for target in targets:
         print("Processing", target)
 
-        files = get_bms_file_list(target)
+        files = sorted(get_bms_file_list(target))
         if len(files) == 0:
             continue
 
         if not os.path.isdir(f"./mp3_files/{target}"):
             os.mkdir(f"./mp3_files/{target}")
 
-        with Pool(16) as p:
+        with Pool(20) as p:
             p.map(command, files)
