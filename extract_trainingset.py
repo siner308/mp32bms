@@ -67,20 +67,32 @@ def get_output(bme_file) -> (list[list[str]], float, int, int):
     level = jsondata["_songInfo"]["level"]
 
     # times_per_second_list = [[0] * 100] * int(duration + 1)
-    columns_per_seconds_list = [["0" for _ in range(100)] for _ in range(int(duration) + 1)]
+    columns_per_seconds_list = [[0 for _ in range(100 * 8)] for _ in range(int(duration) + 1)]
 
     for notechart in notecharts:
         time = notechart['time']
-        column = notechart['column'] if notechart['column'] != 'SC' else 'S'
+        column = notechart['column']
         second = int(time)
         float_index = int(100 * (time - second))
         # times_per_second_list[second][float_index] = time
-        target_column = columns_per_seconds_list[second][float_index]
-        if target_column == "0":
-            columns_per_seconds_list[second][float_index] = column
+        if column == "1":
+            columns_per_seconds_list[second][(float_index * 8)] = 1
+        elif column == "2":
+            columns_per_seconds_list[second][(float_index * 8) + 1] = 1
+        elif column == "3":
+            columns_per_seconds_list[second][(float_index * 8) + 2] = 1
+        elif column == "4":
+            columns_per_seconds_list[second][(float_index * 8) + 3] = 1
+        elif column == "5":
+            columns_per_seconds_list[second][(float_index * 8) + 4] = 1
+        elif column == "6":
+            columns_per_seconds_list[second][(float_index * 8) + 5] = 1
+        elif column == "7":
+            columns_per_seconds_list[second][(float_index * 8) + 6] = 1
+        elif column == "SC":
+            columns_per_seconds_list[second][(float_index * 8) + 7] = 1
         else:
-            columns_per_seconds_list[second][float_index] = "".join(sorted(
-                columns_per_seconds_list[second][float_index] + column))
+            raise ValueError(f"column({column}) is not valid")
 
     return columns_per_seconds_list, duration, difficulty, level
 
@@ -106,6 +118,7 @@ def extract_trainingset():
         # get input
         onsets, duration_from_mp3 = get_input(f"./mp3_files/M/{mp3_file}", duration_from_bme)
 
+        name = mp3_file.replace('.mp3', '')
         for i in range(len(onsets)):
             onset = onsets[i]
             columns = columns_per_seconds_list[i]
@@ -113,7 +126,6 @@ def extract_trainingset():
             input_difficulty = difficulty
             input_level = level
             output_duration = int(100 * duration_from_bme)
-            name = mp3_file.replace('.mp3', '')
             new_df = pandas.DataFrame(
                 [[input_duration, input_difficulty, input_level, output_duration, name]],
                 columns=['input_duration', 'input_difficulty', 'input_level', 'output_duration', 'name'],
