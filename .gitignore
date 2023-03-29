@@ -13,3 +13,6 @@ bms_files/*
 !bms_files/README.md
 
 **/__pycache__/**
+
+*.csv
+*.sav
