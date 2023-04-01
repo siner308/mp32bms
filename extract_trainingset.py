@@ -118,7 +118,8 @@ def extract_trainingset(dirname):
         onsets, duration_from_mp3 = get_input(f"./mp3_files/{dirname}/{mp3_file}", duration_from_bme)
 
         name = mp3_file.replace('.mp3', '')
-        for i in range(len(onsets)):
+
+        for i in range(min(len(onsets), len(columns_per_seconds_list))):
             onset = onsets[i]
             columns = columns_per_seconds_list[i]
             input_duration = int(100 * duration_from_mp3)
@@ -142,10 +143,18 @@ def extract_trainingset(dirname):
 
 
 def trainingset_to_csv():
-    dirs = ["E", "S"]
+    dirs = [
+	# "A",
+	# "B",
+	# "C",
+	"D",
+#	"E",
+#	"S",
+    ]
+    extract_trainingset(dirs[0])
 
-    with Pool(2) as p:
-        p.map(extract_trainingset, dirs)
+    # with Pool(4) as p:
+    #     p.map(extract_trainingset, dirs)
 
 
 if __name__ == "__main__":

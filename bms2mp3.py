@@ -5,8 +5,9 @@ from multiprocessing import Pool
 from file_utils import get_bms_file_list
 
 
-def command(filename: str):
-    dirname = filename[0].upper()
+def command(info: dict):
+    dirname = info.get('dir')
+    filename = info.get('file')
     source = f"./bms_files/{dirname}/{filename}"
     output = f"./mp3_files/{dirname}/{filename[:-4:]}.mp3"
     if not os.path.exists(output):
@@ -16,6 +17,7 @@ def command(filename: str):
 
 if __name__ == "__main__":
     targets = [
+        # "0-9",
         "A",
         "B",
         "C",
@@ -35,13 +37,14 @@ if __name__ == "__main__":
         "Q",
         "R",
         # "S",
-        "T", 
+        "T",
         "U",
         "V",
         "W",
         "X",
         "Y",
-        "Z"
+        "Z",
+        # "漢字",
     ]
     if not os.path.isdir("./mp3_files"):
         os.mkdir("./mp3_files")
@@ -57,4 +60,4 @@ if __name__ == "__main__":
             os.mkdir(f"./mp3_files/{target}")
 
         with Pool(20) as p:
-            p.map(command, files)
+            p.map(command, list(map(lambda file: dict(file=file, dir=target), files)))
