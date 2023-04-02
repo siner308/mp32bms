@@ -3,7 +3,7 @@ import sys
 
 
 def run():
-    dataset = pandas.read_csv('./training_set.csv')
+    dataset = pandas.read_csv('./training_set_backfront.csv')
     input = dataset.loc[:, dataset.columns.str.startswith('input')]
     output = dataset.loc[:, dataset.columns.str.startswith('output')]
     # split training set and validation set
