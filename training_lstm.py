@@ -16,8 +16,8 @@ class LSTMModel(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
+        h0 = torch.zeros(self.num_layers, self.hidden_size).to(device)
+        c0 = torch.zeros(self.num_layers, self.hidden_size).to(device)
 
         out, (hn, cn) = self.lstm(x, (h0, c0))
         out = self.fc(out)
@@ -37,14 +37,13 @@ class CustomDataset(Dataset):
         input_level = self.data.iloc[idx]['input_level']
         output_duration = self.data.iloc[idx]['output_duration']
         name = self.data.iloc[idx]['name']
-        input_onset = self.data.iloc[idx]['input_onset_0':'input_onset_49'].values
-        output_columns = self.data.iloc[idx]['output_columns_0':'output_columns_399'].values
+        input_onset = list(self.data.iloc[idx]['input_onset_0':'input_onset_49'].values)
+        output_columns = list(self.data.iloc[idx]['output_columns_0':'output_columns_399'].values)
 
-        sample = {'input_duration': input_duration, 'input_difficulty': input_difficulty, 'input_level': input_level,
-                  'output_duration': output_duration, 'name': name, 'input_onset': input_onset,
-                  'output_columns': output_columns}
+        input = [input_level, input_difficulty] + input_onset
+        output = output_columns
 
-        return sample
+        return torch.tensor(input, dtype=torch.float32), torch.tensor(output, dtype=torch.float32)
 
 
 if __name__ == "__main__":
@@ -66,7 +65,9 @@ if __name__ == "__main__":
     # 학습 루프
     num_epochs = 1000
     for epoch in range(num_epochs):
-        for i, (input_seq, target_seq) in enumerate(train_loader):
+        print('epoch: ' + str(epoch))
+        for i, (input_seq, target_seq) in enumerate(iter(train_loader)):
+            print(i)
             input_seq = input_seq.to(device)
             target_seq = target_seq.to(device)
 
