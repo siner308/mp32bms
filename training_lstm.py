@@ -84,3 +84,7 @@ if __name__ == "__main__":
             if (i + 1) % 10 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                       .format(epoch + 1, num_epochs, i + 1, len(train_loader), loss.item()))
+
+    # save model
+    torch.save(model.state_dict(), 'lstm_model.pth')
+    
