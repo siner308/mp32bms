@@ -56,18 +56,17 @@ if __name__ == "__main__":
 
     # 손실 함수와 최적화 함수 정의
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.02)
 
     # data from training_set.csv
     train_dataset = CustomDataset('training_set_backfront.csv')
     train_loader = DataLoader(dataset=train_dataset, batch_size=100, shuffle=True)
 
     # 학습 루프
-    num_epochs = 1000
+    num_epochs = 50
     for epoch in range(num_epochs):
         print('epoch: ' + str(epoch))
         for i, (input_seq, target_seq) in enumerate(iter(train_loader)):
-            print(i)
             input_seq = input_seq.to(device)
             target_seq = target_seq.to(device)
 
