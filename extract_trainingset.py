@@ -8,6 +8,8 @@ import pandas
 
 from file_utils import get_file_list
 
+batch_size = 500
+
 
 def get_input(mp3_file, duration_from_bme):
     """
@@ -30,8 +32,8 @@ def get_input(mp3_file, duration_from_bme):
         if times_index >= len(times):
             break
 
-        unit_time = int(100 * times[times_index])
-        if unit_time > 100 * duration_from_bme:
+        unit_time = int(batch_size * times[times_index])
+        if unit_time > batch_size * duration_from_bme:
             break
 
         if unit_time == start:
@@ -42,18 +44,17 @@ def get_input(mp3_file, duration_from_bme):
             onset_per_seconds.append(0)
 
         start = start + 1
-        if start % 100 == 0:
+        if start % batch_size == 0:
             onsets.append(onset_per_seconds)
             onset_per_seconds = []
 
-    onsets.append(onset_per_seconds + [0] * (100 - len(onset_per_seconds)))
+    onsets.append(onset_per_seconds + [0] * (batch_size - len(onset_per_seconds)))
 
     return onsets, duration
 
 
 def get_output(bme_file) -> (list[list[str]], float, int, int):
     """
-    bpm이 변하는 곡이라면, 학습에 포함시키지 말자.
     :param bme_file:
     :return:
     """
@@ -65,14 +66,14 @@ def get_output(bme_file) -> (list[list[str]], float, int, int):
     difficulty = jsondata["_songInfo"]["difficulty"]
     level = jsondata["_songInfo"]["level"]
 
-    # times_per_second_list = [[0] * 100] * int(duration + 1)
-    columns_per_seconds_list = [[0 for _ in range(100 * 8)] for _ in range(int(duration) + 1)]
+    # times_per_second_list = [[0] * batch_size] * int(duration + 1)
+    columns_per_seconds_list = [[0 for _ in range(batch_size * 8)] for _ in range(int(duration) + 1)]
 
     for notechart in notecharts:
         time = notechart['time']
         column = notechart['column']
         second = int(time)
-        float_index = int(100 * (time - second))
+        float_index = int(batch_size * (time - second))
         # times_per_second_list[second][float_index] = time
         if column == "1":
             columns_per_seconds_list[second][(float_index * 8)] = 1
@@ -122,13 +123,13 @@ def extract_trainingset(dirname):
         for i in range(min(len(onsets), len(columns_per_seconds_list))):
             onset = onsets[i]
             columns = columns_per_seconds_list[i]
-            input_duration = int(100 * duration_from_mp3)
-            input_difficulty = difficulty
+            # input_duration = int(batch_size * duration_from_mp3)
+            # input_difficulty = difficulty
             input_level = level
-            output_duration = int(100 * duration_from_bme)
+            # output_duration = int(batch_size * duration_from_bme)
             new_df = pandas.DataFrame(
-                [[input_duration, input_difficulty, input_level, output_duration, name]],
-                columns=['input_duration', 'input_difficulty', 'input_level', 'output_duration', 'name'],
+                [[input_level, name]],
+                columns=['input_level', 'name'],
             )
 
             new_df = pandas.concat([new_df, pandas.DataFrame(onset).transpose().add_prefix("input_onset_")], axis=1)
@@ -139,22 +140,22 @@ def extract_trainingset(dirname):
             dataframe = pandas.concat([dataframe, new_df]) if not dataframe.empty else new_df
         print(f"✅ {name}")
 
-    dataframe.to_csv(f"training_set_{dirname}.csv", index=False)
+    dataframe.to_csv(f"training_set_five_seconds_{dirname}.csv", index=False)
 
 
 def trainingset_to_csv():
     dirs = [
-	# "A",
-	# "B",
-	# "C",
-	"D",
-#	"E",
-#	"S",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "M",
+        "S",
     ]
-    extract_trainingset(dirs[0])
 
-    # with Pool(4) as p:
-    #     p.map(extract_trainingset, dirs)
+    with Pool(7) as p:
+        p.map(extract_trainingset, dirs)
 
 
 if __name__ == "__main__":
