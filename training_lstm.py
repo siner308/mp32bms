@@ -27,7 +27,7 @@ class LSTMModel(nn.Module):
 
 class CustomDataset(Dataset):
     def __init__(self, csv_file, length=None):
-        self.data = pandas.read_csv(csv_file, nrows=length)
+        self.data = pandas.read_csv(csv_file, nrows=length, engine='pyarrow')
 
     def __len__(self):
         return len(self.data)
@@ -38,8 +38,8 @@ class CustomDataset(Dataset):
         input_level = self.data.iloc[idx]['input_level']
         # output_duration = self.data.iloc[idx]['output_duration']
         # name = self.data.iloc[idx]['name']
-        input_onset = list(self.data.iloc[idx]['input_onset_0':'input_onset_499'].values)
-        output_columns = list(self.data.iloc[idx]['output_columns_0':'output_columns_3999'].values)
+        input_onset = list(self.data.iloc[idx]['input_onset_0':'input_onset_49'].values)
+        output_columns = list(self.data.iloc[idx]['output_columns_0':'output_columns_399'].values)
 
         input = [input_level] + input_onset
         output = output_columns
@@ -49,10 +49,10 @@ class CustomDataset(Dataset):
 
 if __name__ == "__main__":
     # 모델 초기화
-    input_size = 501  # 입력 데이터의 크기 (500개의 onset 데이터 + level)
+    input_size = 51  # 입력 데이터의 크기 (500개의 onset 데이터 + level)
     hidden_size = 128  # LSTM의 히든 레이어 크기
     num_layers = 2  # LSTM의 레이어 수
-    output_size = 4000  # 출력 데이터의 크기 (8개의 lane * 500개의 시간 단계)
+    output_size = 400  # 출력 데이터의 크기 (8개의 lane * 500개의 시간 단계)
     model = LSTMModel(input_size, hidden_size, num_layers, output_size).to(device)
 
     # 손실 함수와 최적화 함수 정의
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=1 / num_epochs)
 
     # data from training_set.csv
-    train_dataset = CustomDataset('training_set_five_seconds.csv')
+    train_dataset = CustomDataset('./training_set_tem_seconds.csv')
     train_loader = DataLoader(dataset=train_dataset, batch_size=100, shuffle=True)
 
     writer = SummaryWriter()
@@ -91,5 +91,5 @@ if __name__ == "__main__":
     writer.close()
 
     # save model
-    torch.save(model.state_dict(), 'lstm_model.pth')
+    torch.save(model.state_dict(), 'lstm_model_ten_seconds.pth')
 
