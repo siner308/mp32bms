@@ -25,7 +25,7 @@ def bms_files(package, temp:)
     input = File.join(dir, basename)
     output = File.join(outdir, File.basename(basename, File.extname(basename)) + '.wav')
     command = [ 'sox', input, '-r', '44.1k', '-c', '2', output ]
-    $stderr.puts "Converting audio: #{basename}"
+    # $stderr.puts "Converting audio: #{basename}"
     system(*command)
   end
   basenames.each do |basename|

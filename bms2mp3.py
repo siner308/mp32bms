@@ -18,10 +18,10 @@ def command(info: dict):
 if __name__ == "__main__":
     targets = [
         # "0-9",
-        "A",
-        "B",
-        "C",
-        "D",
+        # "A",
+        # "B",
+        # "C",
+        # "D",
         # "E",
         "F",
         "G",
@@ -49,6 +49,9 @@ if __name__ == "__main__":
     if not os.path.isdir("./mp3_files"):
         os.mkdir("./mp3_files")
 
+    if not os.path.isdir("./bme_files"):
+        os.mkdir("./bme_files")
+
     for target in targets:
         print("Processing", target)
 
@@ -58,6 +61,9 @@ if __name__ == "__main__":
 
         if not os.path.isdir(f"./mp3_files/{target}"):
             os.mkdir(f"./mp3_files/{target}")
+
+        if not os.path.isdir(f"./bme_files/{target}"):
+            os.mkdir(f"./bme_files/{target}")
 
         with Pool(20) as p:
             p.map(command, list(map(lambda file: dict(file=file, dir=target), files)))
