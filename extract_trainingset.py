@@ -1,3 +1,4 @@
+import sys
 from multiprocessing import Pool
 
 import numpy as np
@@ -8,7 +9,7 @@ import pandas
 
 from file_utils import get_file_list
 
-batch_size = 500
+batch_size = 50
 
 
 def get_input(mp3_file, duration_from_bme):
@@ -97,6 +98,27 @@ def get_output(bme_file) -> (list[list[str]], float, int, int):
     return columns_per_seconds_list, duration, difficulty, level
 
 
+def get_new_df(data):
+    onset = data.get('onset')
+    columns = data.get('columns')
+    # input_duration = int(batch_size * duration_from_mp3)
+    # input_difficulty = difficulty
+    input_level = data.get('level')
+    input_name = data.get('name')
+    # output_duration = int(batch_size * duration_from_bme)
+    new_df = pandas.DataFrame(
+        [[input_level, input_name]],
+        columns=['input_level', 'name'],
+    )
+
+    new_df = pandas.concat([new_df, pandas.DataFrame(onset).transpose().add_prefix("input_onset_")], axis=1)
+    new_df = pandas.concat([new_df, pandas.DataFrame(columns).transpose().add_prefix("output_columns_")],
+                           axis=1)
+
+    # append to dataframe
+    return new_df
+
+
 def extract_trainingset(dirname):
     # get training set
     mp3_files = get_file_list('./mp3_files/' + dirname)
@@ -120,43 +142,33 @@ def extract_trainingset(dirname):
 
         name = mp3_file.replace('.mp3', '')
 
-        for i in range(min(len(onsets), len(columns_per_seconds_list))):
-            onset = onsets[i]
-            columns = columns_per_seconds_list[i]
-            # input_duration = int(batch_size * duration_from_mp3)
-            # input_difficulty = difficulty
-            input_level = level
-            # output_duration = int(batch_size * duration_from_bme)
-            new_df = pandas.DataFrame(
-                [[input_level, name]],
-                columns=['input_level', 'name'],
-            )
+        with Pool(20) as p:
+            data = [dict(onset=onsets[i][::], columns=columns_per_seconds_list[i][::], level=level, name=name) for i in
+                    range(min(len(onsets), len(columns_per_seconds_list)))]
+            result = p.map(get_new_df, data)
 
-            new_df = pandas.concat([new_df, pandas.DataFrame(onset).transpose().add_prefix("input_onset_")], axis=1)
-            new_df = pandas.concat([new_df, pandas.DataFrame(columns).transpose().add_prefix("output_columns_")],
-                                   axis=1)
-
-            # append to dataframe
-            dataframe = pandas.concat([dataframe, new_df]) if not dataframe.empty else new_df
+        for df in result:
+            dataframe = pandas.concat([dataframe, df], ignore_index=True)
         print(f"✅ {name}")
 
-    dataframe.to_csv(f"training_set_five_seconds_{dirname}.csv", index=False)
+    dataframe.to_csv(f"training_set_ten_seconds_{dirname}.csv", index=False)
 
 
-def trainingset_to_csv():
-    dirs = [
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "M",
-        "S",
-    ]
-
-    with Pool(7) as p:
-        p.map(extract_trainingset, dirs)
+# def trainingset_to_csv():
+#     dirs = [
+#         "A",
+#         "B",
+#         "C",
+#         "D",
+#         "E",
+#         "M",
+#         "S",
+#     ]
+#
+#     for dir in dirs:
+#         extract_trainingset(dir)
 
 
 if __name__ == "__main__":
-    trainingset_to_csv()
+    dir = sys.argv[1]
+    extract_trainingset(dir)
